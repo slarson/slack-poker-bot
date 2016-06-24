@@ -173,7 +173,7 @@ class Bot {
             return rx.Observable.return(token)
           });
       })
-      .flatMap(token => PlayerInteraction.selectBank(messagesInChannel, directChannel, token)
+      .flatMap(token => PlayerInteraction.selectBank(messagesInChannel, directChannel, token))
       .flatMap(() => PlayerInteraction.setExpenseLimit(messagesInChannel, directChannel, user))
       .flatMap(() => rx.Observable.return(user));
   }
