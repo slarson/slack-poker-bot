@@ -45,8 +45,11 @@ class PlayerInteraction {
           .flatMap(password => {
             return this.openOpenBankConnection(username, password);
           });
-      })
-      .flatMap(_ => this.getUserInput(messages, channel, 'Maximum amount you are ready to lose:'))
+      });
+  }
+
+  static setExpenseLimit(messages, channel, user) {
+    return this.getUserInput(messages, channel, 'Maximum amount you are ready to lose:')
       .flatMap(amount => {
         debug('expense limit for %s is set to %s', user.name, amount);
         return rx.Observable.return(user.id);

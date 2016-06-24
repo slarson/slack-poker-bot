@@ -177,7 +177,8 @@ class Bot {
         .flatMap(bankId => {
             return rx.Observable.return(bankId);
           }))
-      .flatMap(() => rx.Observable.return(user));
+      .flatMap(_ => PlayerInteraction.setExpenseLimit(messagesInChannel, directChannel, user))
+      .flatMap(_ => rx.Observable.return(user));
   }
 
   // Private: Starts and manages a new Texas Hold'em game.
