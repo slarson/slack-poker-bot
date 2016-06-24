@@ -49,14 +49,34 @@ class PlayerInteraction {
     channel.send(`${property}:`)
 
     return messages
-      .where(message => message.user === userId)
+      // .where(message => message.user === userId)
       .take(1)
       .flatMap(message => rx.Observable.return(message.text));
   }
 
   static openOpenBankConnection(username, password) {
     return OBAPI.authenticate(username, password);
-    // return rx.Observable.return(null);
+  }
+
+  static selectBank(messages, channel, token) {
+    channel.send('Please select Bank from available list:')
+
+    return OBAPI.getBanks(token)
+      .flatMap(banks => {
+        // banks.forEach((bank, i) => channel.send(`${i+1}. ${bank.name}`))
+        channel.send(banks.map((bank, i) => `${i+1}. ${bank.name}`).join('\n'))
+
+        return messages
+          .where(e => {
+            let val
+            return e.text && (val = parseInt(e.text)) && !isNaN(val) && (val >= 1) && (val <= banks.length);
+          })
+          .take(1)
+          .flatMap(message => {
+            const bank = banks[parseInt(message.text) - 1];
+            return rx.Observable.return(bank.id);
+          });
+      });
   }
 
   // Public: Poll a specific player to take a poker action, within a timeout.

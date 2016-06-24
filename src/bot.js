@@ -71,9 +71,9 @@ class Bot {
         return true;
       })
       .where(channel => {
-          channel.send('Currency is not set! provide a currency("EUR", "GBP", "USD"): ');
+          channel.send('Please, set currency for the game ("EUR", "GBP", "USD"):');
           messages
-            .where(e => e.text && e.text.toLowerCase().match(/^(usd|eur|gbp|\$|€)$/))
+            .where(e => e.text && e.text.match(/^(usd|eur|gbp|\$|€|£)$/i))
             .take(1)
             .map(e => {
               this.setCurrency(e.text);
@@ -88,7 +88,7 @@ class Bot {
   }
 
   setCurrency(currency) {
-    switch(currency){
+    switch(currency.toLowerCase()){
       case 'usd' :
         this.currency = '$';
         break;
@@ -154,13 +154,26 @@ class Bot {
 
   connectPlayersToOpenBank(messages, channel, userId) {
     let user = this.slack.getUserByID(userId);
+    let messagesInChannel
+    let directChannel
 
     return SlackApiRx.getOrOpenDm(this.slack, user)
       .pluck('dm')
       .flatMap(dm => {
-        let messagesInChannel = messages.where(e => e.channel === dm.id);
-        return PlayerInteraction.connectToOpenBank(messagesInChannel, dm, userId);
+        directChannel = dm
+        messagesInChannel = messages.where(e => e.channel === dm.id);
+
+        return PlayerInteraction.connectToOpenBank(messagesInChannel, directChannel, userId)
+          .flatMap(token => {
+            user.authToken = token;
+            return rx.Observable.return(token)
+          });
       })
+      .flatMap(token => PlayerInteraction.selectBank(messagesInChannel, directChannel, token)
+        .flatMap(bankId => {
+            console.log(this.slack.getUserByID(userId))
+            return rx.Observable.return(bankId);
+          }))
       .flatMap(() => rx.Observable.return(userId));
   }
 
