@@ -1,5 +1,6 @@
 const rx = require('rx');
 const _ = require('underscore-plus');
+const config = require('./config');
 
 const Deck = require('./deck');
 const PotManager = require('./pot-manager');
@@ -27,15 +28,17 @@ class TexasHoldem {
     this.scheduler = scheduler;
     this.currency = currency;
 
-    this.smallBlind = 1;
-    this.bigBlind = this.smallBlind * 2;
+    this.smallBlind = config.smallBlind;
+    this.bigBlind = config.bigBlind;
     this.potManager = new PotManager(this.channel, players, this.smallBlind, this.currency);
     this.gameEnded = new rx.Subject();
 
-    // Each player starts with 100 big blinds.
     for (let player of this.players) {
-      player.chips = this.bigBlind * 100;
+      if (player.isBot) {
+        player.chips = config.minExpense;
+      }
     }
+
   }
 
   // Public: Starts a new game.
