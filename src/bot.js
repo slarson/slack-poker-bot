@@ -176,7 +176,6 @@ class Bot {
       })
       .flatMap(token => PlayerInteraction.selectBank(messagesInChannel, directChannel, token)
         .flatMap(bankId => {
-            console.log(this.slack.getUserByID(userId))
             return rx.Observable.return(bankId);
           }))
       .flatMap(() => rx.Observable.return(userId));

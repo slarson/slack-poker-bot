@@ -39,22 +39,24 @@ class PlayerInteraction {
   static connectToOpenBank(messages, channel, userId) {
     channel.send('Connect to your OpenBank account');
 
-    return this.getUserInput(messages, channel, userId, 'Username')
+    return this.getUserInput(messages, channel, 'Username')
       .flatMap(username => {
-        return this.getUserInput(messages, channel, userId, 'Password')
+        return this.getUserInput(messages, channel, 'Password')
           .flatMap(password => {
             return this.openOpenBankConnection(username, password);
           });
       });
   }
 
-  static getUserInput(messages, channel, userId, property) {
+  static getUserInput(messages, channel, property) {
     channel.send(`${property}:`)
 
     return messages
-      // .where(message => message.user === userId)
       .take(1)
-      .flatMap(message => rx.Observable.return(message.text));
+      .flatMap(message => {
+        const text = message.text.replace(/^<(?:mailto\:)?([^\|]+)(?:\|.+)?>$/, (str, p) => p);
+        return rx.Observable.return(text)
+      });
   }
 
   static openOpenBankConnection(username, password) {
@@ -66,7 +68,6 @@ class PlayerInteraction {
 
     return OBAPI.getBanks(token)
       .flatMap(banks => {
-        // banks.forEach((bank, i) => channel.send(`${i+1}. ${bank.name}`))
         channel.send(banks.map((bank, i) => `${i+1}. ${bank.name}`).join('\n'))
 
         return messages

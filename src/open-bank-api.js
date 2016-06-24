@@ -9,12 +9,12 @@ const consumerKey = 'aotg5jrxdsmfiszgod1fa2olzjxmwo1mtjiuj140'
 const api = {
   authenticate: (username, password) => {
     const authSubject = new rx.AsyncSubject();
+    // username = 'borysp@backbase.com';
+    // password = 'Password_01';
     const options = {
       headers: {
         'content-type': 'application/json',
-        'authorization': `DirectLogin username="${username}",
-          password="${password}",
-          consumer_key="${consumerKey}"`
+        'authorization': `DirectLogin username="${username}", password="${password}", consumer_key="${consumerKey}"`
       }
     }
 
