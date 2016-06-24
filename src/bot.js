@@ -170,10 +170,11 @@ class Bot {
         return PlayerInteraction.connectToOpenBank(messagesInChannel, directChannel, user)
           .flatMap(token => {
             user.authToken = token;
-            return rx.Observable.return(token)
+            return rx.Observable.return(null)
           });
       })
-      .flatMap(token => PlayerInteraction.selectBank(messagesInChannel, directChannel, token)
+      .flatMap(() => PlayerInteraction.selectBank(messagesInChannel, directChannel, user))
+      .flatMap(() => PlayerInteraction.selectAccount(messagesInChannel, directChannel, user))
       .flatMap(() => PlayerInteraction.setExpenseLimit(messagesInChannel, directChannel, user))
       .flatMap(() => rx.Observable.return(user));
   }

@@ -71,10 +71,10 @@ class PlayerInteraction {
     return OBAPI.authenticate(username, password);
   }
 
-  static selectBank(messages, channel, token) {
+  static selectBank(messages, channel, user) {
     channel.send('Please select Bank from available list (enter Bank number):')
 
-    return OBAPI.getBanks(token)
+    return OBAPI.getBanks(user.authToken)
       .flatMap(banks => {
         channel.send(banks.map((bank, i) => `${i+1}. ${bank.name}`).join('\n'))
 
@@ -86,7 +86,29 @@ class PlayerInteraction {
           .take(1)
           .flatMap(message => {
             const bank = banks[parseInt(message.text) - 1];
+            user.bankId = bank.id;
             return rx.Observable.return(bank.id);
+          });
+      });
+  }
+
+  static selectAccount(messages, channel, user) {
+    channel.send('Please select Account from available list (enter Acount number):')
+
+    return OBAPI.getAccounts(user.authToken, user.bankId)
+      .flatMap(accounts => {
+        channel.send(accounts.map((account, i) => `${i+1}. ${account.name}`).join('\n'))
+
+        return messages
+          .where(e => {
+            let val
+            return e.text && (val = parseInt(e.text)) && !isNaN(val) && (val >= 1) && (val <= accounts.length);
+          })
+          .take(1)
+          .flatMap(message => {
+            const account = accounts[parseInt(message.text) - 1];
+            user.accountId = account.id;
+            return rx.Observable.return(account.id);
           });
       });
   }
