@@ -1,5 +1,6 @@
 const rx = require('rx');
 const needle = require('needle');
+const debug = require('debug')('bankapi');
 
 const baseUrl = 'https://apisandbox.openbankproject.com'
 const baseApiUrl = `${baseUrl}/obp/v2.0.0`
