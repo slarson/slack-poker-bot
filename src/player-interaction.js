@@ -36,23 +36,27 @@ class PlayerInteraction {
     return newPlayers.takeUntil(timeExpired);
   }
 
-  static connectToOpenBank(messages, channel, userId) {
+  static connectToOpenBank(messages, channel, user) {
     channel.send('Connect to your OpenBank account');
 
-    return this.getUserInput(messages, channel, userId, 'Username')
+    return this.getUserInput(messages, channel, user, 'Username')
       .flatMap(username => {
-        return this.getUserInput(messages, channel, userId, 'Password')
+        return this.getUserInput(messages, channel, user, 'Password')
           .flatMap(password => {
             return this.openOpenBankConnection(username, password);
           });
+      })
+      .flatMap(_ => this.getUserInput(messages, channel, user, 'Maximum amount you are ready to lose:'))
+      .flatMap(amount => {
+        debug('expense limit for %s is set to %s', user.name, amount);
+        return rx.Observable.return(user.id);
       });
   }
 
-  static getUserInput(messages, channel, userId, property) {
+  static getUserInput(messages, channel, user, property) {
     channel.send(`${property}:`)
 
     return messages
-      // .where(message => message.user === userId)
       .take(1)
       .flatMap(message => rx.Observable.return(message.text));
   }

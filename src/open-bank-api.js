@@ -12,9 +12,7 @@ const api = {
     const options = {
       headers: {
         'content-type': 'application/json',
-        'authorization': `DirectLogin username="${username}",
-          password="${password}",
-          consumer_key="${consumerKey}"`
+        'authorization': `DirectLogin username="${username}", password="${password}", consumer_key="${consumerKey}"`
       }
     }
 
@@ -36,12 +34,16 @@ const api = {
     }
 
     needle.get(`${baseApiUrl}/banks`, options, (err, res, body) => {
-      const banks = body.banks.map(bank => ({
-        id: bank.id,
-        name: bank.full_name
-      }));
+      if (body.error) {
+        authSubject.onError(body);
+      } else {
+        const banks = body.banks.map(bank => ({
+            id: bank.id,
+            name: bank.full_name
+        }));
 
-      authSubject.onNext(banks);
+        authSubject.onNext(banks);
+      }
       authSubject.onCompleted();
     })
     return authSubject;
