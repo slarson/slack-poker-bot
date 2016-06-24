@@ -6,6 +6,7 @@ const SlackApiRx = require('./slack-api-rx');
 const TexasHoldem = require('./texas-holdem');
 const MessageHelpers = require('./message-helpers');
 const PlayerInteraction = require('./player-interaction');
+const config = require('./config');
 
 const WeakBot = require('../ai/weak-bot');
 const AggroBot = require('../ai/aggro-bot');
@@ -222,11 +223,12 @@ class Bot {
   //
   // players - The players participating in the game
   addBotPlayers(players) {
-    // let bot1 = new WeakBot('Phil Hellmuth');
-    // players.push(bot1);
-    //
-    //let bot2 = new AggroBot('Phil Ivey');
-    //players.push(bot2);
+    if (config.botNumber > 0) {
+      players.push(new WeakBot('Phil Hellmuth'));
+    }
+    if (config.botNumber > 1) {
+      players.push(new AggroBot('Phil Ivey'));
+    }
   }
 
   // Private: Save which channels and groups this bot is in and log them.

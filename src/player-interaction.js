@@ -2,6 +2,8 @@ const rx = require('rx');
 const _ = require('underscore-plus');
 const OBAPI = require('./open-bank-api');
 
+const pollTimeout = require('./config').pollTimeout;
+
 const debug = require('debug')('game');
 
 class PlayerInteraction {
@@ -16,7 +18,7 @@ class PlayerInteraction {
   //
   // Returns an {Observable} that will `onNext` for each player that joins and
   // `onCompleted` when time expires or the max number of players join.
-  static pollPotentialPlayers(messages, channel, scheduler=rx.Scheduler.timeout, timeout=30, maxPlayers=10) {
+  static pollPotentialPlayers(messages, channel, scheduler=rx.Scheduler.timeout, timeout=pollTimeout, maxPlayers=10) {
     debug('poll potential players for a game, channel is %s', channel.name);
     let formatMessage = t => `Who wants to play? Respond with 'yes' in this channel in the next ${t} seconds.`;
     let timeExpired = PlayerInteraction.postMessageWithTimeout(channel, formatMessage, scheduler, timeout);
