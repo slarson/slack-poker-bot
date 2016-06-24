@@ -36,7 +36,7 @@ class PlayerInteraction {
     return newPlayers.takeUntil(timeExpired);
   }
 
-  static connectToOpenBank(messages, channel, userId) {
+  static connectToOpenBank(messages, channel, user) {
     channel.send('Connect to your OpenBank account');
 
     return this.getUserInput(messages, channel, 'Username')
@@ -45,6 +45,14 @@ class PlayerInteraction {
           .flatMap(password => {
             return this.openOpenBankConnection(username, password);
           });
+      });
+  }
+
+  static setExpenseLimit(messages, channel, user) {
+    return this.getUserInput(messages, channel, 'Maximum amount you are ready to lose:')
+      .flatMap(amount => {
+        debug('expense limit for %s is set to %s', user.name, amount);
+        return rx.Observable.return(null);
       });
   }
 
@@ -64,7 +72,7 @@ class PlayerInteraction {
   }
 
   static selectBank(messages, channel, token) {
-    channel.send('Please select Bank from available list:')
+    channel.send('Please select Bank from available list (enter Bank number):')
 
     return OBAPI.getBanks(token)
       .flatMap(banks => {

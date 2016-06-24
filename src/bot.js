@@ -139,9 +139,9 @@ class Bot {
 
     debug('poll players for a game');
     return PlayerInteraction.pollPotentialPlayers(messages, channel)
-      .flatMap(playerId => this.connectPlayersToOpenBank(messages, channel, playerId))
-      .reduce((players, id) => {
-        let user = this.slack.getUserByID(id);
+      .map(playerId => this.slack.getUserByID(playerId))
+      .flatMap(player => this.connectPlayersToOpenBank(messages, channel, player))
+      .reduce((players, user) => {
         debug(`${user.name} has joined the game.`);
         channel.send(`${user.name} has joined the game.`);
 
@@ -157,8 +157,7 @@ class Bot {
       });
   }
 
-  connectPlayersToOpenBank(messages, channel, userId) {
-    let user = this.slack.getUserByID(userId);
+  connectPlayersToOpenBank(messages, channel, user) {
     let messagesInChannel
     let directChannel
 
@@ -168,17 +167,15 @@ class Bot {
         directChannel = dm
         messagesInChannel = messages.where(e => e.channel === dm.id);
 
-        return PlayerInteraction.connectToOpenBank(messagesInChannel, directChannel, userId)
+        return PlayerInteraction.connectToOpenBank(messagesInChannel, directChannel, user)
           .flatMap(token => {
             user.authToken = token;
             return rx.Observable.return(token)
           });
       })
       .flatMap(token => PlayerInteraction.selectBank(messagesInChannel, directChannel, token)
-        .flatMap(bankId => {
-            return rx.Observable.return(bankId);
-          }))
-      .flatMap(() => rx.Observable.return(userId));
+      .flatMap(() => PlayerInteraction.setExpenseLimit(messagesInChannel, directChannel, user))
+      .flatMap(() => rx.Observable.return(user));
   }
 
   // Private: Starts and manages a new Texas Hold'em game.
