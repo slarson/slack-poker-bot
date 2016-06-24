@@ -52,7 +52,7 @@ class PlayerInteraction {
     return this.getUserInput(messages, channel, 'Maximum amount you are ready to lose:')
       .flatMap(amount => {
         debug('expense limit for %s is set to %s', user.name, amount);
-        return rx.Observable.return(user.id);
+        return rx.Observable.return(null);
       });
   }
 
@@ -61,7 +61,10 @@ class PlayerInteraction {
 
     return messages
       .take(1)
-      .flatMap(message => rx.Observable.return(message.text));
+      .flatMap(message => {
+        const text = message.text.replace(/^<(?:mailto\:)?([^\|]+)(?:\|.+)?>$/, (str, p) => p);
+        return rx.Observable.return(text)
+      });
   }
 
   static openOpenBankConnection(username, password) {
@@ -69,11 +72,10 @@ class PlayerInteraction {
   }
 
   static selectBank(messages, channel, token) {
-    channel.send('Please select Bank from available list:')
+    channel.send('Please select Bank from available list (enter Bank number):')
 
     return OBAPI.getBanks(token)
       .flatMap(banks => {
-        // banks.forEach((bank, i) => channel.send(`${i+1}. ${bank.name}`))
         channel.send(banks.map((bank, i) => `${i+1}. ${bank.name}`).join('\n'))
 
         return messages

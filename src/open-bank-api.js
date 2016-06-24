@@ -17,7 +17,11 @@ const api = {
     }
 
     needle.post(`${baseUrl}/my/logins/direct`, {}, options, (err, res, body) => {
-      authSubject.onNext(body.token);
+      if (err || body.error) {
+        authSubject.onError(err || body.error);
+      } else {
+        authSubject.onNext(body.token);
+      }
       authSubject.onCompleted();
     });
 
@@ -34,8 +38,8 @@ const api = {
     }
 
     needle.get(`${baseApiUrl}/banks`, options, (err, res, body) => {
-      if (body.error) {
-        authSubject.onError(body);
+      if (err || body.error) {
+        authSubject.onError(err || body.error);
       } else {
         const banks = body.banks.map(bank => ({
             id: bank.id,

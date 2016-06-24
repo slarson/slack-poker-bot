@@ -174,11 +174,8 @@ class Bot {
           });
       })
       .flatMap(token => PlayerInteraction.selectBank(messagesInChannel, directChannel, token)
-        .flatMap(bankId => {
-            return rx.Observable.return(bankId);
-          }))
-      .flatMap(_ => PlayerInteraction.setExpenseLimit(messagesInChannel, directChannel, user))
-      .flatMap(_ => rx.Observable.return(user));
+      .flatMap(() => PlayerInteraction.setExpenseLimit(messagesInChannel, directChannel, user))
+      .flatMap(() => rx.Observable.return(user));
   }
 
   // Private: Starts and manages a new Texas Hold'em game.
