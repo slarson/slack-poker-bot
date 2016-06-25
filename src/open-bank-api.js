@@ -134,7 +134,9 @@ const api = {
 
   createTransaction: (winner, looser, amount) => {
     const params = {
-
+      to: {},
+      value: {},
+      description: ''
     }
     const options = {
       headers: {
@@ -147,6 +149,10 @@ const api = {
       if (err || body.error) {
         authSubject.onError(err || body.error);
       } else {
+
+        //Output to direct channel!
+        //
+        //
         /*const accounts = body.map(account => ({
             id: account.id,
             name: account.label || account.id
