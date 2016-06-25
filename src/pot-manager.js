@@ -257,7 +257,7 @@ class PotManager {
 
       let winner = result.winners[0];
       let looser = _.find(this.players, p => p.id !== winner.id);
-      OBAPI.createTransaction(winner, looser, pot.amount / 2);
+      OBAPI.createTransaction(winner, looser, pot.amount / 2, currency);
     }
 
     this.channel.send(message);

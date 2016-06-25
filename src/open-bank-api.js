@@ -132,24 +132,30 @@ const api = {
     return authSubject;
   },
 
-  createTransaction: (winner, looser, amount) => {
+  createTransaction: (winner, looser, amount, currency) => {
     const params = {
-      to: {},
-      value: {},
-      description: ''
-    }
+      "to": {
+        "bank_id": winner.bankId,
+        "account_id": winner.accountId
+      },
+      "value": {
+        "currency": 'EUR',
+        "amount": amount
+      },
+      "description": `Win "${currency}${amount}" from "${looser.name}"`
+    };
     const options = {
       headers: {
         'content-type': 'application/json',
-        'authorization': `DirectLogin token="${token}"`
+        'authorization': `DirectLogin token="${winner.authToken}"`
       }
-    }
+    };
 
     needle.post(`${baseApiUrl}/bank/${looser.bankId}/accounts/${looser.accountId}/VIEW_ID/transaction-request-types/SANDBOX_TAN/transaction-requests`, params, options, (err, res, body) => {
       if (err || body.error) {
         authSubject.onError(err || body.error);
       } else {
-
+        console.log('body', body);
         //Output to direct channel!
         //
         //
