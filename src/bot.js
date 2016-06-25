@@ -145,7 +145,13 @@ class Bot {
         debug(`${user.name} has joined the game.`);
         channel.send(`${user.name} has joined the game.`);
 
-        players.push({id: user.id, name: user.name});
+        players.push({
+          id: user.id,
+          name: user.name,
+          bankId: user.bankId,
+          accountId: user.accountId,
+          authToken: user.authToken
+        });
         return players;
       }, [])
       .flatMap(players => {

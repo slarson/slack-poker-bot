@@ -74,8 +74,12 @@ class PlayerInteraction {
   static selectBank(messages, channel, user) {
     channel.send('Please select Bank from available list (enter Bank number):')
 
-    return OBAPI.getBanks(user.authToken)
-      .flatMap(banks => {
+    return rx.Observable.forkJoin(
+      OBAPI.getBanks(user.authToken),
+      OBAPI.getAccounts(user.authToken)
+    )
+      .flatMap(result => {
+        let banks = result[0].filter(bank => result[1].some(account => (account.bankId === bank.id)))
         channel.send(banks.map((bank, i) => `${i+1}. ${bank.name}`).join('\n'))
 
         return messages
@@ -95,7 +99,7 @@ class PlayerInteraction {
   static selectAccount(messages, channel, user) {
     channel.send('Please select Account from available list (enter Acount number):')
 
-    return OBAPI.getAccounts(user.authToken, user.bankId)
+    return OBAPI.getBankAccounts(user.authToken, user.bankId)
       .flatMap(accounts => {
         channel.send(accounts.map((account, i) => `${i+1}. ${account.name}`).join('\n'))
 

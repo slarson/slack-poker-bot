@@ -30,6 +30,32 @@ const api = {
     return authSubject;
   },
 
+  getAccounts: token => {
+    const authSubject = new rx.AsyncSubject();
+    const options = {
+      headers: {
+        'content-type': 'application/json',
+        'authorization': `DirectLogin token="${token}"`
+      }
+    }
+
+    needle.get(`${baseApiUrl}/accounts`, options, (err, res, body) => {
+      if (err || body.error) {
+        authSubject.onError(err || body.error);
+      } else {
+        const accounts = body.map(account => ({
+            id: account.id,
+            name: account.label || account.id,
+            bankId: account.bank_id
+        }));
+
+        authSubject.onNext(accounts);
+      }
+      authSubject.onCompleted();
+    })
+    return authSubject;
+  },
+
   getBanks: token => {
     const authSubject = new rx.AsyncSubject();
     const options = {
@@ -55,7 +81,7 @@ const api = {
     return authSubject;
   },
 
-  getAccounts: (token, bankId) => {
+  getBankAccounts: (token, bankId) => {
     const authSubject = new rx.AsyncSubject();
     const options = {
       headers: {
@@ -68,10 +94,9 @@ const api = {
       if (err || body.error) {
         authSubject.onError(err || body.error);
       } else {
-        console.log(body)
         const accounts = body.map(account => ({
             id: account.id,
-            name: account.full_name
+            name: account.label || account.id
         }));
 
         authSubject.onNext(accounts);
