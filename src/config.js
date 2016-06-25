@@ -1,6 +1,6 @@
 const config = {
     botNumber: 0,
-    pollTimeout: 30,
+    pollTimeout: 60,
     smallBlind: 1
 }
 

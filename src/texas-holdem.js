@@ -20,13 +20,14 @@ class TexasHoldem {
   // channel - The channel where the game will be played
   // players - The players participating in the game
   // scheduler - (Optional) The scheduler to use for timing events
-  constructor(slack, messages, channel, players, currency, scheduler=rx.Scheduler.timeout) {
+  constructor(slack, messages, channel, players, currency, currencyCode, scheduler=rx.Scheduler.timeout) {
     this.slack = slack;
     this.messages = messages;
     this.channel = channel;
     this.players = players;
     this.scheduler = scheduler;
     this.currency = currency;
+    this.currencyCode = currencyCode;
 
     this.smallBlind = config.smallBlind;
     this.bigBlind = this.smallBlind * 2;

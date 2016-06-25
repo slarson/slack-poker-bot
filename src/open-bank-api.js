@@ -96,10 +96,36 @@ const api = {
       } else {
         const accounts = body.map(account => ({
             id: account.id,
-            name: account.label || account.id
+            name: account.label || account.id,
+            views: account.views_available
         }));
 
         authSubject.onNext(accounts);
+      }
+      authSubject.onCompleted();
+    })
+    return authSubject;
+  },
+
+  getBankAccount: (token, bankId, accountId, viewId) => {
+    const authSubject = new rx.AsyncSubject();
+    const options = {
+      headers: {
+        'content-type': 'application/json',
+        'authorization': `DirectLogin token="${token}"`
+      }
+    }
+
+    needle.get(`${baseApiUrl}/banks/${bankId}/accounts/${accountId}/${viewId}/account`, options, (err, res, body) => {
+      if (err || body.error) {
+        authSubject.onError(err || body.error);
+      } else {
+        /*const accounts = body.map(account => ({
+            id: account.id,
+            name: account.label || account.id
+        }));*/
+
+        authSubject.onNext(body);
       }
       authSubject.onCompleted();
     })

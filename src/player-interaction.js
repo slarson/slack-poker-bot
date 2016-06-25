@@ -50,16 +50,35 @@ class PlayerInteraction {
       });
   }
 
-  static setExpenseLimit(messages, channel, user, currency, availableAmount=400) {
-    channel.send(`Available amount for this account is ${currency}${availableAmount}.`);
-    if (availableAmount < config.minExpense) {
-      channel.send(`Sorry, there is no enough money on this account to play this game (minimum required amount is ${currency}${config.minExpense}).`)
-      return rx.Observable.empty();
-    }
+  static selectAccountAndLimit(messages, channel, user, currency, currencyCode) {
+    return this.selectAccount(messages, channel, user)
+      .flatMap(user => {
+        if(user) {
+          return PlayerInteraction.setExpenseLimit(messages, channel, user, currency, currencyCode)
+        } else {
+          return rx.Observable.empty();
+        }
+      });
+  }
 
-    return this.getUserInput(messages, channel, `Please, specify your bankroll amount (not less than ${currency}${config.minExpense})`)
+  static setExpenseLimit(messages, channel, user, currency, currencyCode, availableAmount=400) {
+    return OBAPI.getBankAccount(user.authToken, user.bankId, user.accountId, user.accountViews[0].id)
+      .flatMap(account => {
+        if(account.balance.currency !== currencyCode) {
+          channel.send(`Account currency is "${account.balance.currency}", but it should be "${currencyCode}". Please, select different account.`);
+          return this.selectAccountAndLimit(messages, channel, user, currency, currencyCode);
+        }
+
+        if(parseFloat(account.balance.amount) < config.minExpense) {
+          channel.send(`Sorry, ${currency}${account.balance.amount} is not enough to play this game (minimum required amount is ${currency}${config.minExpense}). Please select different account.`);
+          return this.selectAccountAndLimit(messages, channel, user, currency, currencyCode);
+        }
+
+        channel.send(`Available amount for this account is ${currency}${account.balance.amount}.`);
+        return this.getUserInput(messages, channel, `Please, specify your game bankroll (not less than ${currency}${config.minExpense})`)
+      })
       .flatMap(amount => {
-        amount = parseInt(amount)
+        amount = parseFloat(amount)
         if (amount < config.minExpense) {
           channel.send('I warned you! Bye bye.');
           return rx.Observable.empty();
@@ -126,6 +145,7 @@ class PlayerInteraction {
           .flatMap(message => {
             const account = accounts[parseInt(message.text) - 1];
             user.accountId = account.id;
+            user.accountViews = account.views;
             return rx.Observable.return(user);
           });
       });
