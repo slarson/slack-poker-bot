@@ -6,6 +6,7 @@ const SlackApiRx = require('./slack-api-rx');
 const TexasHoldem = require('./texas-holdem');
 const MessageHelpers = require('./message-helpers');
 const PlayerInteraction = require('./player-interaction');
+const config = require('./config');
 
 const WeakBot = require('../ai/weak-bot');
 const AggroBot = require('../ai/aggro-bot');
@@ -145,13 +146,7 @@ class Bot {
         debug(`${user.name} has joined the game.`);
         channel.send(`${user.name} has joined the game.`);
 
-        players.push({
-          id: user.id,
-          name: user.name,
-          bankId: user.bankId,
-          accountId: user.accountId,
-          authToken: user.authToken
-        });
+        players.push(_.pick(user, ['id', 'name', 'chips', 'bankId', 'accountId', 'authToken']));
         return players;
       }, [])
       .flatMap(players => {
@@ -176,12 +171,30 @@ class Bot {
         return PlayerInteraction.connectToOpenBank(messagesInChannel, directChannel, user)
           .flatMap(token => {
             user.authToken = token;
-            return rx.Observable.return(null)
+            return rx.Observable.return(user)
           });
       })
-      .flatMap(() => PlayerInteraction.selectBank(messagesInChannel, directChannel, user))
-      .flatMap(() => PlayerInteraction.selectAccount(messagesInChannel, directChannel, user))
-      .flatMap(() => PlayerInteraction.setExpenseLimit(messagesInChannel, directChannel, user))
+      .flatMap(user => {
+        if(user) {
+          return PlayerInteraction.selectBank(messagesInChannel, directChannel, user);
+        } else {
+          return rx.Observable.empty();
+        }
+      })
+      .flatMap(user => {
+        if(user) {
+          return PlayerInteraction.selectAccount(messagesInChannel, directChannel, user);
+        } else {
+          return rx.Observable.empty();
+        }
+      })
+      .flatMap(user => {
+        if(user) {
+          return PlayerInteraction.setExpenseLimit(messagesInChannel, directChannel, user, this.currency)
+        } else {
+          return rx.Observable.empty();
+        }
+      })
       .flatMap(() => rx.Observable.return(user));
   }
 
@@ -229,11 +242,12 @@ class Bot {
   //
   // players - The players participating in the game
   addBotPlayers(players) {
-    // let bot1 = new WeakBot('Phil Hellmuth');
-    // players.push(bot1);
-    //
-    //let bot2 = new AggroBot('Phil Ivey');
-    //players.push(bot2);
+    if (config.botNumber > 0) {
+      players.push(new WeakBot('Phil Hellmuth'));
+    }
+    if (config.botNumber > 1) {
+      players.push(new AggroBot('Phil Ivey'));
+    }
   }
 
   // Private: Save which channels and groups this bot is in and log them.

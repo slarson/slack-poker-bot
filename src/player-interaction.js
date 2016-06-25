@@ -2,6 +2,8 @@ const rx = require('rx');
 const _ = require('underscore-plus');
 const OBAPI = require('./open-bank-api');
 
+const config = require('./config');
+
 const debug = require('debug')('game');
 
 class PlayerInteraction {
@@ -16,7 +18,7 @@ class PlayerInteraction {
   //
   // Returns an {Observable} that will `onNext` for each player that joins and
   // `onCompleted` when time expires or the max number of players join.
-  static pollPotentialPlayers(messages, channel, scheduler=rx.Scheduler.timeout, timeout=30, maxPlayers=10) {
+  static pollPotentialPlayers(messages, channel, scheduler=rx.Scheduler.timeout, timeout=config.pollTimeout, maxPlayers=10) {
     debug('poll potential players for a game, channel is %s', channel.name);
     let formatMessage = t => `Who wants to play? Respond with 'yes' in this channel in the next ${t} seconds.`;
     let timeExpired = PlayerInteraction.postMessageWithTimeout(channel, formatMessage, scheduler, timeout);
@@ -48,11 +50,23 @@ class PlayerInteraction {
       });
   }
 
-  static setExpenseLimit(messages, channel, user) {
-    return this.getUserInput(messages, channel, 'Maximum amount you are ready to lose:')
+  static setExpenseLimit(messages, channel, user, currency, availableAmount=400) {
+    channel.send(`Available amount for this account is ${currency}${availableAmount}.`);
+    if (availableAmount < config.minExpense) {
+      channel.send(`Sorry, there is no enough money on this account to play this game (minimum required amount is ${currency}${config.minExpense}).`)
+      return rx.Observable.empty();
+    }
+
+    return this.getUserInput(messages, channel, `Please, specify your bankroll amount (not less than ${currency}${config.minExpense})`)
       .flatMap(amount => {
-        debug('expense limit for %s is set to %s', user.name, amount);
-        return rx.Observable.return(null);
+        amount = parseInt(amount)
+        if (amount < config.minExpense) {
+          channel.send('I warned you! Bye bye.');
+          return rx.Observable.empty();
+        }
+        debug('expense limit for %s is set to %s%s', user.name, currency, amount);
+        user.chips = amount;
+        return rx.Observable.return(user);
       });
   }
 
@@ -91,7 +105,7 @@ class PlayerInteraction {
           .flatMap(message => {
             const bank = banks[parseInt(message.text) - 1];
             user.bankId = bank.id;
-            return rx.Observable.return(bank.id);
+            return rx.Observable.return(user);
           });
       });
   }
@@ -112,7 +126,7 @@ class PlayerInteraction {
           .flatMap(message => {
             const account = accounts[parseInt(message.text) - 1];
             user.accountId = account.id;
-            return rx.Observable.return(account.id);
+            return rx.Observable.return(user);
           });
       });
   }
