@@ -2,7 +2,7 @@ const rx = require('rx');
 const _ = require('underscore-plus');
 const OBAPI = require('./open-bank-api');
 
-const pollTimeout = require('./config').pollTimeout;
+const config = require('./config');
 
 const debug = require('debug')('game');
 
@@ -18,7 +18,7 @@ class PlayerInteraction {
   //
   // Returns an {Observable} that will `onNext` for each player that joins and
   // `onCompleted` when time expires or the max number of players join.
-  static pollPotentialPlayers(messages, channel, scheduler=rx.Scheduler.timeout, timeout=pollTimeout, maxPlayers=10) {
+  static pollPotentialPlayers(messages, channel, scheduler=rx.Scheduler.timeout, timeout=config.pollTimeout, maxPlayers=10) {
     debug('poll potential players for a game, channel is %s', channel.name);
     let formatMessage = t => `Who wants to play? Respond with 'yes' in this channel in the next ${t} seconds.`;
     let timeExpired = PlayerInteraction.postMessageWithTimeout(channel, formatMessage, scheduler, timeout);
@@ -50,10 +50,20 @@ class PlayerInteraction {
       });
   }
 
-  static setExpenseLimit(messages, channel, user) {
-    return this.getUserInput(messages, channel, 'Maximum amount you are ready to lose:')
+  static setExpenseLimit(messages, channel, user, currency, availableAmount=~~(Math.random() * 400)) {
+    channel.send(`Available amount for this account is ${currency}${availableAmount}.`);
+    if (availableAmount < config.minExpense) {
+      channel.send(`Sorry, there is no enough money on this account to play this game (minimum required amount is ${currency}${config.minExpense}).`)
+      return rx.Observable.empty();
+    }
+    return this.getUserInput(messages, channel, `Please, specify the maximum amount you are ready to lose (not less than ${currency}${config.minExpense}):`)
       .flatMap(amount => {
-        debug('expense limit for %s is set to %s', user.name, amount);
+        if (amount < config.minExpense) {
+          channel.send('Nope.');
+          return rx.Observable.empty();
+        }
+        debug('expense limit for %s is set to %s%s', user.name, currency, amount);
+        user.chips = amount;
         return rx.Observable.return(null);
       });
   }

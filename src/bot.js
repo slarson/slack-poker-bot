@@ -146,7 +146,7 @@ class Bot {
         debug(`${user.name} has joined the game.`);
         channel.send(`${user.name} has joined the game.`);
 
-        players.push({id: user.id, name: user.name});
+        players.push(_.pick(user, ['id', 'name', 'chips']));
         return players;
       }, [])
       .flatMap(players => {
@@ -175,7 +175,7 @@ class Bot {
           });
       })
       .flatMap(token => PlayerInteraction.selectBank(messagesInChannel, directChannel, token))
-      .flatMap(() => PlayerInteraction.setExpenseLimit(messagesInChannel, directChannel, user))
+      .flatMap(() => PlayerInteraction.setExpenseLimit(messagesInChannel, directChannel, user, this.currency))
       .flatMap(() => rx.Observable.return(user));
   }
 

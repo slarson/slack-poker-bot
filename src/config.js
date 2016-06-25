@@ -1,4 +1,8 @@
-export default {
+const config = {
+    botNumber: 0,
     pollTimeout: 30,
-    botNumber: 0
+    smallBlind: 1,
+    minExpense: this.smallBlind * 100
 }
+
+export default config
