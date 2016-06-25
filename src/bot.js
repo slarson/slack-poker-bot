@@ -81,7 +81,7 @@ class Bot {
             .take(1)
             .map(e => {
               this.setCurrency(e.text);
-              channel.send('Currency is set to: ' + this.currency);
+              channel.send('Currency is set to: ' + this.currencyCode);
               this.pollPlayersForGame(messages, channel).subscribe();
             })
             .publish()
@@ -95,15 +95,19 @@ class Bot {
     switch(currency.toLowerCase()){
       case 'usd' :
         this.currency = '$';
+        this.currencyCode = 'USD';
         break;
       case 'eur' :
         this.currency = '€';
+        this.currencyCode = 'EUR';
         break;
       case 'gbp' :
         this.currency = '£';
+        this.currencyCode = 'GBP';
         break;
       default :
         this.currency = '$';
+        this.currencyCode = 'USD';
     }
   }
 
@@ -146,7 +150,7 @@ class Bot {
         debug(`${user.name} has joined the game.`);
         channel.send(`${user.name} has joined the game.`);
 
-        players.push(_.pick(user, ['id', 'name', 'chips']));
+        players.push(_.pick(user, ['id', 'name', 'chips', 'bankId', 'accountId', 'authToken']));
         return players;
       }, [])
       .flatMap(players => {
@@ -171,11 +175,30 @@ class Bot {
         return PlayerInteraction.connectToOpenBank(messagesInChannel, directChannel, user)
           .flatMap(token => {
             user.authToken = token;
-            return rx.Observable.return(token)
+            return rx.Observable.return(user)
           });
       })
-      .flatMap(token => PlayerInteraction.selectBank(messagesInChannel, directChannel, token))
-      .flatMap(() => PlayerInteraction.setExpenseLimit(messagesInChannel, directChannel, user, this.currency))
+      .flatMap(user => {
+        if(user) {
+          return PlayerInteraction.selectBank(messagesInChannel, directChannel, user);
+        } else {
+          return rx.Observable.empty();
+        }
+      })
+/*      .flatMap(user => {
+        if(user) {
+          return PlayerInteraction.selectAccount(messagesInChannel, directChannel, user);
+        } else {
+          return rx.Observable.empty();
+        }
+      })*/
+      .flatMap(user => {
+        if(user) {
+          return PlayerInteraction.selectAccountAndLimit(messagesInChannel, directChannel, user, this.currency, this.currencyCode)
+        } else {
+          return rx.Observable.empty();
+        }
+      })
       .flatMap(() => rx.Observable.return(user));
   }
 
@@ -196,7 +219,7 @@ class Bot {
     channel.send(`We've got ${players.length} players, let's start the game.`);
     this.isGameRunning = true;
 
-    let game = new TexasHoldem(this.slack, messages, channel, players, this.currency);
+    let game = new TexasHoldem(this.slack, messages, channel, players, this.currency, this.currencyCode);
     _.extend(game, this.gameConfig);
 
     // Listen for messages directed at the bot containing 'quit game.'

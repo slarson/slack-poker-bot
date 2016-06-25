@@ -50,21 +50,42 @@ class PlayerInteraction {
       });
   }
 
-  static setExpenseLimit(messages, channel, user, currency, availableAmount=~~(Math.random() * 400)) {
-    channel.send(`Available amount for this account is ${currency}${availableAmount}.`);
-    if (availableAmount < config.minExpense) {
-      channel.send(`Sorry, there is no enough money on this account to play this game (minimum required amount is ${currency}${config.minExpense}).`)
-      return rx.Observable.empty();
-    }
-    return this.getUserInput(messages, channel, `Please, specify the maximum amount you are ready to lose (not less than ${currency}${config.minExpense}):`)
+  static selectAccountAndLimit(messages, channel, user, currency, currencyCode) {
+    return this.selectAccount(messages, channel, user)
+      .flatMap(user => {
+        if(user) {
+          return PlayerInteraction.setExpenseLimit(messages, channel, user, currency, currencyCode)
+        } else {
+          return rx.Observable.empty();
+        }
+      });
+  }
+
+  static setExpenseLimit(messages, channel, user, currency, currencyCode, availableAmount=400) {
+    return OBAPI.getBankAccount(user.authToken, user.bankId, user.accountId, user.accountViews[0].id)
+      .flatMap(account => {
+        if(account.balance.currency !== currencyCode) {
+          channel.send(`Account currency is "${account.balance.currency}", but it should be "${currencyCode}". Please, select different account.`);
+          return this.selectAccountAndLimit(messages, channel, user, currency, currencyCode);
+        }
+
+        if(parseFloat(account.balance.amount) < config.minExpense) {
+          channel.send(`Sorry, ${currency}${account.balance.amount} is not enough to play this game (minimum required amount is ${currency}${config.minExpense}). Please select different account.`);
+          return this.selectAccountAndLimit(messages, channel, user, currency, currencyCode);
+        }
+
+        channel.send(`Available amount for this account is ${currency}${account.balance.amount}.`);
+        return this.getUserInput(messages, channel, `Please, specify your game bankroll (not less than ${currency}${config.minExpense})`)
+      })
       .flatMap(amount => {
+        amount = parseFloat(amount)
         if (amount < config.minExpense) {
-          channel.send('Nope.');
+          channel.send('I warned you! Bye bye.');
           return rx.Observable.empty();
         }
         debug('expense limit for %s is set to %s%s', user.name, currency, amount);
         user.chips = amount;
-        return rx.Observable.return(null);
+        return rx.Observable.return(user);
       });
   }
 
@@ -83,11 +104,15 @@ class PlayerInteraction {
     return OBAPI.authenticate(username, password);
   }
 
-  static selectBank(messages, channel, token) {
+  static selectBank(messages, channel, user) {
     channel.send('Please select Bank from available list (enter Bank number):')
 
-    return OBAPI.getBanks(token)
-      .flatMap(banks => {
+    return rx.Observable.forkJoin(
+      OBAPI.getBanks(user.authToken),
+      OBAPI.getAccounts(user.authToken)
+    )
+      .flatMap(result => {
+        let banks = result[0].filter(bank => result[1].some(account => (account.bankId === bank.id)))
         channel.send(banks.map((bank, i) => `${i+1}. ${bank.name}`).join('\n'))
 
         return messages
@@ -98,7 +123,32 @@ class PlayerInteraction {
           .take(1)
           .flatMap(message => {
             const bank = banks[parseInt(message.text) - 1];
-            return rx.Observable.return(bank.id);
+            user.bankId = bank.id;
+            console.log(`Bank ID: ${bank.id}`)
+            return rx.Observable.return(user);
+          });
+      });
+  }
+
+  static selectAccount(messages, channel, user) {
+    channel.send('Please select Account from available list (enter Acount number):')
+
+    return OBAPI.getBankAccounts(user.authToken, user.bankId)
+      .flatMap(accounts => {
+        channel.send(accounts.map((account, i) => `${i+1}. ${account.name}`).join('\n'))
+
+        return messages
+          .where(e => {
+            let val
+            return e.text && (val = parseInt(e.text)) && !isNaN(val) && (val >= 1) && (val <= accounts.length);
+          })
+          .take(1)
+          .flatMap(message => {
+            const account = accounts[parseInt(message.text) - 1];
+            user.accountId = account.id;
+            user.accountViews = account.views;
+            console.log(`Account ID: ${account.id}`)
+            return rx.Observable.return(user);
           });
       });
   }
