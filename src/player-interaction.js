@@ -124,6 +124,7 @@ class PlayerInteraction {
           .flatMap(message => {
             const bank = banks[parseInt(message.text) - 1];
             user.bankId = bank.id;
+            console.log(`Bank ID: ${bank.id}`)
             return rx.Observable.return(user);
           });
       });
@@ -146,6 +147,7 @@ class PlayerInteraction {
             const account = accounts[parseInt(message.text) - 1];
             user.accountId = account.id;
             user.accountViews = account.views;
+            console.log(`Account ID: ${account.id}`)
             return rx.Observable.return(user);
           });
       });
