@@ -29,7 +29,7 @@ class TexasHoldem {
     this.currency = currency;
 
     this.smallBlind = config.smallBlind;
-    this.bigBlind = config.bigBlind;
+    this.bigBlind = this.smallBlind * 2;
     this.potManager = new PotManager(this.channel, players, this.smallBlind, this.currency);
     this.gameEnded = new rx.Subject();
 
@@ -64,7 +64,7 @@ class TexasHoldem {
       .repeat()
       .takeUntil(this.gameEnded)
       .subscribe();
-      
+
     return this.gameEnded;
   }
 
@@ -75,10 +75,10 @@ class TexasHoldem {
     if (winner) {
       this.channel.send(`Congratulations ${winner.name}, you've won!`);
     }
-    
+
     this.gameEnded.onNext(winner);
     this.gameEnded.onCompleted();
-    
+
     this.isRunning = false;
   }
 
@@ -118,7 +118,7 @@ class TexasHoldem {
         this.flop(handEnded);
       }
     });
-    
+
     return handEnded;
   }
 
@@ -132,10 +132,10 @@ class TexasHoldem {
       player.isAllIn = false;
       player.isBettor = false;
     }
-    
+
     let participants = _.filter(this.players, p => p.isInHand);
     this.potManager.createPot(participants);
-    
+
     this.smallBlindIdx = PlayerOrder.getNextPlayerIndex(this.dealerButton, this.players);
     this.bigBlindIdx = PlayerOrder.getNextPlayerIndex(this.smallBlindIdx, this.players);
   }
@@ -366,13 +366,13 @@ class TexasHoldem {
       currentBettor.isBettor = false;
       currentBettor.hasOption = false;
     }
-    
+
     player.isBettor = true;
     if (player.chips === 0) {
       player.isAllIn = true;
     }
-    
-    let playersWhoCanCall = _.filter(this.players, 
+
+    let playersWhoCanCall = _.filter(this.players,
       p => p.isInHand && !p.isBettor && p.chips > 0);
     if (playersWhoCanCall.length === 0) {
       let result = { isHandComplete: false };
@@ -413,7 +413,7 @@ class TexasHoldem {
     this.deck.drawCard(); // Burn one
     let turn = this.deck.drawCard();
     this.board.push(turn);
-    
+
     this.postBoard('turn').subscribe(() => {
       this.doBettingRound('turn').subscribe(result => {
         if (result.isHandComplete) {
@@ -448,7 +448,7 @@ class TexasHoldem {
       });
     });
   }
-  
+
   // Private: Move the dealer button and see if the game has ended.
   //
   // handEnded - A {Subject} that is used to end the hand
@@ -459,7 +459,7 @@ class TexasHoldem {
 
     handEnded.onNext(true);
     handEnded.onCompleted();
-    
+
     this.checkForGameWinner();
   }
 
@@ -541,7 +541,7 @@ class TexasHoldem {
         console.error('Creating board image timed out');
         let message = `Dealing the ${round}:\n${this.board.toString()}`;
         this.channel.send(message);
-        
+
         return rx.Observable.timer(1000, this.scheduler);
       });
   }

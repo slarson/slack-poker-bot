@@ -1,10 +1,8 @@
 const config = {
     botNumber: 0,
     pollTimeout: 30,
-    smallBlind: 1
+    smallBlind: 1,
+    minExpense: this.smallBlind * 100
 }
-
-config.bigBlind = config.smallBlind * 2
-config.minExpense = config.bigBlind * 100
 
 export default config
