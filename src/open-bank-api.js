@@ -130,6 +130,30 @@ const api = {
       authSubject.onCompleted();
     })
     return authSubject;
+  },
+
+  createTransaction: (winner, looser, amount) => {
+    const params = {
+
+    }
+    const options = {
+      headers: {
+        'content-type': 'application/json',
+        'authorization': `DirectLogin token="${token}"`
+      }
+    }
+
+    needle.post(`${baseApiUrl}/bank/${looser.bankId}/accounts/${looser.accountId}/VIEW_ID/transaction-request-types/SANDBOX_TAN/transaction-requests`, params, options, (err, res, body) => {
+      if (err || body.error) {
+        authSubject.onError(err || body.error);
+      } else {
+        /*const accounts = body.map(account => ({
+            id: account.id,
+            name: account.label || account.id
+        }));*/
+
+      }
+    })
   }
 }
 
