@@ -1,6 +1,6 @@
 const fs = require('fs');
 const rx = require('rx');
-const lwip = require('lwip');
+const lwip = require('gulp-lwip');
 const imgur = require('imgur');
 const promisify = require('promisify-node');
 

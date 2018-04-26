@@ -1,7 +1,7 @@
 require('babel/register');
 
 var rx = require('rx');
-var lwip = require('lwip');
+var lwip = require('gulp-lwip');
 var assert = require('chai').assert;
 
 var Card = require('../src/card');
