@@ -22,7 +22,7 @@
     "imgur": "^0.2.1",
     "lwip": "0.0.8",
     "needle": "^1.0.0",
-    "request": "2.85.0",
+    "hawk": "7.0.7",
     "poker-evaluator": "^0.3.1",
     "promisify-node": "^0.1.5",
     "rx": "^2.5.2",
